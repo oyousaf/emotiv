@@ -1,0 +1,52 @@
+{
+  "name": "emotiv",
+  "version": "0.1.0",
+  "private": true,
+  "description": "emotiv AI: where imagination becomes motion",
+  "type": "module",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "setup": "tsx scripts/setup.ts",
+    "dev": "concurrently -n web,worker -c cyan,magenta \"next dev\" \"npm:worker\"",
+    "dev:web": "next dev",
+    "worker": "tsx worker/render-worker.ts",
+    "build": "next build",
+    "start": "concurrently -n web,worker -c cyan,magenta \"next start\" \"npm:worker\"",
+    "studio": "remotion studio src/remotion/index.ts",
+    "seed": "tsx scripts/seed.ts",
+    "export:example": "tsx scripts/export-example.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:render": "vitest run --config vitest.render.config.ts"
+  },
+  "dependencies": {
+    "@remotion/bundler": "4.0.539",
+    "@remotion/cli": "4.0.539",
+    "@remotion/fonts": "4.0.539",
+    "@remotion/media": "4.0.539",
+    "@remotion/player": "4.0.539",
+    "@remotion/renderer": "4.0.539",
+    "@remotion/transitions": "4.0.539",
+    "mediabunny": "1.64.0",
+    "motion": "14.9.0",
+    "next": "16.4.3",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "remotion": "4.0.539",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "4.3.3",
+    "@types/node": "24.19.2",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "concurrently": "10.0.6",
+    "tailwindcss": "4.3.3",
+    "tsx": "4.23.15",
+    "typescript": "6.0.3",
+    "vitest": "5.0.5"
+  }
+}

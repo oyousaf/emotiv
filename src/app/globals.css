@@ -1,0 +1,86 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ink-950: #08080c;
+  --color-ink-900: #0e0e14;
+  --color-ink-850: #13131b;
+  --color-ink-800: #1a1a24;
+  --color-ink-700: #252532;
+  --color-ink-600: #343445;
+  --color-ink-500: #4c4c62;
+  --color-ink-400: #7a7a92;
+  --color-ink-300: #a3a3b8;
+  --color-ink-200: #cfcfdc;
+  --color-ink-100: #ececf3;
+  --color-accent: #ff2e88;
+  --color-accent-soft: #ff2e8826;
+  --color-cyan: #00e5ff;
+  --color-ok: #3ddc97;
+  --color-warn: #ffb547;
+  --color-bad: #ff5c5c;
+  --font-sans: "Segoe UI Variable", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-mono: "Cascadia Code", "SF Mono", Consolas, monospace;
+}
+
+html,
+body {
+  background: var(--color-ink-950);
+  color: var(--color-ink-100);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-ink-600) transparent;
+}
+
+input[type="color"] {
+  -webkit-appearance: none;
+  appearance: none;
+  border: none;
+  padding: 0;
+  background: none;
+}
+input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+input[type="color"]::-webkit-color-swatch {
+  border: 1px solid var(--color-ink-600);
+  border-radius: 6px;
+}
+
+input[type="range"] {
+  accent-color: var(--color-accent);
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-md border border-ink-600 bg-ink-800 px-3 py-1.5 text-sm font-medium text-ink-100 transition-colors hover:border-ink-500 hover:bg-ink-700 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply border-accent bg-accent font-semibold text-ink-950 hover:border-accent hover:bg-accent hover:brightness-110;
+  }
+  .btn-ghost {
+    @apply border-transparent bg-transparent hover:border-transparent hover:bg-ink-800;
+  }
+  .btn-icon {
+    @apply px-1.5 py-1;
+  }
+  .field {
+    @apply w-full rounded-md border border-ink-600 bg-ink-900 px-2 py-1.5 text-sm text-ink-100 outline-none transition-colors placeholder:text-ink-500 focus:border-accent;
+  }
+  .label {
+    @apply mb-1 block text-[11px] font-medium uppercase tracking-wider text-ink-400;
+  }
+  .panel-title {
+    @apply text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-400;
+  }
+}
+
+/* Seasonal backdrop: two soft glows in the month's colours. */
+.seasonal-backdrop {
+  background:
+    radial-gradient(60rem 40rem at 10% -10%, color-mix(in srgb, var(--color-accent) 14%, transparent), transparent 70%),
+    radial-gradient(50rem 36rem at 100% 0%, color-mix(in srgb, var(--color-cyan) 10%, transparent), transparent 70%);
+}

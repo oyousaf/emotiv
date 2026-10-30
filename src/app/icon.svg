@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="ribbon" x1="10" y1="54" x2="54" y2="10" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#00e5ff"/>
+      <stop offset=".45" stop-color="#a06bff"/>
+      <stop offset=".75" stop-color="#ff2e88"/>
+      <stop offset="1" stop-color="#ffb000"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="40" cy="22" r="34" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#3b1466"/>
+      <stop offset="1" stop-color="#09060f"/>
+    </radialGradient>
+    <linearGradient id="trail" x1="0" x2="1">
+      <stop offset="0" stop-color="#00e5ff" stop-opacity="0"/>
+      <stop offset="1" stop-color="#00e5ff"/>
+    </linearGradient>
+    <filter id="soft" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="2.4"/>
+    </filter>
+  </defs>
+  <rect width="64" height="64" rx="15" fill="url(#glow)"/>
+  <!-- motion trails, as if the letter just swept in -->
+  <path d="M4 26h10M2 33h13M6 40h8" stroke="url(#trail)" stroke-width="2.4" stroke-linecap="round" opacity=".85"/>
+  <!-- the "e" as one continuous brushed ribbon, with a soft neon halo -->
+  <path d="M19 33H48A15.5 15.5 0 1 0 43.2 44" fill="none" stroke="url(#ribbon)" stroke-width="7" stroke-linecap="round" filter="url(#soft)" opacity=".7"/>
+  <path d="M19 33H48A15.5 15.5 0 1 0 43.2 44" fill="none" stroke="url(#ribbon)" stroke-width="6" stroke-linecap="round"/>
+  <path d="M22 30.6h23" stroke="#fff" stroke-opacity=".45" stroke-width="1.3" stroke-linecap="round"/>
+  <!-- sparkle -->
+  <path d="M50 9.5l1.6 4.4 4.4 1.6-4.4 1.6L50 21.5l-1.6-4.4-4.4-1.6 4.4-1.6z" fill="#fff"/>
+  <circle cx="45.5" cy="50" r="1.6" fill="#ffb000"/>
+</svg>
