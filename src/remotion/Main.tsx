@@ -114,14 +114,18 @@ const Soundtrack: React.FC<{ props: CompositionProps }> = ({ props }) => {
   const track = props.doc.soundtrack;
   const asset = track ? props.assets[track.assetId] : undefined;
   if (!track || asset?.kind !== "audio") return null;
+  // fadeOut can be 0 (imported soundtracks), which would give interpolate a duplicate point.
+  const fadeStart = Math.max(0, durationInFrames - track.fadeOut);
   return (
     <Audio
       src={asset.url}
       volume={(f) =>
-        interpolate(f, [0, Math.max(1, durationInFrames - track.fadeOut), durationInFrames], [track.volume, track.volume, 0], {
-          extrapolateLeft: "clamp",
-          extrapolateRight: "clamp",
-        })
+        fadeStart >= durationInFrames
+          ? track.volume
+          : interpolate(f, [fadeStart, durationInFrames], [track.volume, 0], {
+              extrapolateLeft: "clamp",
+              extrapolateRight: "clamp",
+            })
       }
     />
   );
