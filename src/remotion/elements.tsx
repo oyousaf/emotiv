@@ -1,7 +1,9 @@
-import type React from "react";
-import { Img, useCurrentFrame, useVideoConfig } from "remotion";
+import { Lottie, type LottieAnimationData } from "@remotion/lottie";
+import React, { useEffect, useState } from "react";
+import { cancelRender, continueRender, delayRender, Img, Sequence, useCurrentFrame, useVideoConfig } from "remotion";
 import type {
   ImageElement,
+  LottieElement,
   ResolvedAsset,
   SceneElement,
   ShapeElement,
@@ -85,6 +87,8 @@ const TextView: React.FC<{ el: TextElement; duration: number }> = ({ el, duratio
   const split = el.animIn.preset === "typewriter" ? "none" : el.animIn.split;
   const units = splitText(text, split);
   const mask = usesMask(el.animIn.preset);
+  // The mask must be big enough for the glow, or its edges show as boxes.
+  const maskPad = Math.ceil(el.glow * 1.5 + el.strokeWidth);
 
   const glow =
     el.glow > 0 ? `0 0 ${el.glow * 0.25}px ${el.glowColor}, 0 0 ${el.glow}px ${el.glowColor}` : undefined;
@@ -136,8 +140,8 @@ const TextView: React.FC<{ el: TextElement; duration: number }> = ({ el, duratio
           overflow: "hidden",
           verticalAlign: "bottom",
           // Room for descenders and glow inside the mask.
-          padding: "0.08em 0.04em",
-          margin: "-0.08em -0.04em",
+          padding: `calc(0.08em + ${maskPad}px) calc(0.04em + ${maskPad}px)`,
+          margin: `calc(-0.08em - ${maskPad}px) calc(-0.04em - ${maskPad}px)`,
         }}
       >
         {inner}
@@ -216,5 +220,61 @@ export const ElementView: React.FC<{ el: SceneElement; duration: number; assets:
       return <ShapeView el={el} duration={duration} />;
     case "image":
       return <ImageView el={el} duration={duration} assets={assets} />;
+    case "lottie":
+      return <LottieView el={el} duration={duration} assets={assets} />;
   }
+};
+
+// Lottie JSON is fetched once per URL and shared by every layer that uses it.
+const lottieCache = new Map<string, Promise<LottieAnimationData>>();
+function fetchLottie(url: string) {
+  let p = lottieCache.get(url);
+  if (!p) {
+    p = fetch(url).then((r) => {
+      if (!r.ok) throw new Error(`Lottie ${url}: HTTP ${r.status}`);
+      return r.json() as Promise<LottieAnimationData>;
+    });
+    lottieCache.set(url, p);
+  }
+  return p;
+}
+
+const LottieView: React.FC<{ el: LottieElement; duration: number; assets: Assets }> = ({ el, duration, assets }) => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const asset = assets[el.assetId];
+  const [data, setData] = useState<LottieAnimationData | null>(null);
+  const [handle] = useState(() => delayRender(`Loading Lottie ${el.assetId}`));
+
+  useEffect(() => {
+    if (!asset || asset.kind !== "lottie") {
+      continueRender(handle);
+      return;
+    }
+    fetchLottie(asset.url)
+      .then((json) => {
+        setData(json);
+        continueRender(handle);
+      })
+      .catch((err) => cancelRender(err));
+  }, [asset, handle]);
+
+  if (!data) return null;
+  const s = wholeState(el, frame, fps, duration);
+  const aspect = `${data.w} / ${data.h}`;
+  return (
+    <div style={boxStyle(el)}>
+      <div style={{ width: "100%", aspectRatio: aspect, ...stateStyle(s) }}>
+        {/* Shift the timeline so `offset` frames of the animation are skipped. */}
+        <Sequence from={-el.offset} layout="none">
+          <Lottie
+            animationData={data}
+            loop={el.repeat}
+            playbackRate={el.playbackRate}
+            style={{ width: "100%", height: "100%" }}
+          />
+        </Sequence>
+      </div>
+    </div>
+  );
 };

@@ -31,7 +31,11 @@ export function Preview({ playerRef }: { playerRef: RefObject<PlayerRef | null> 
   const { doc, setDoc, assets, select, selection } = useEditor();
   const { width, height } = FORMATS[doc.format];
   const duration = getTotalDuration(doc);
-  const inputProps = useMemo(() => buildCompositionProps(doc, assets, editorAssetUrl), [doc, assets]);
+  const [showRef, setShowRef] = useState(true);
+  const inputProps = useMemo(
+    () => ({ ...buildCompositionProps(doc, assets, editorAssetUrl), showReference: showRef }),
+    [doc, assets, showRef],
+  );
   const stage = useRef<HTMLDivElement>(null);
   const fit = useFit(stage, width, height);
   const ready = fit.width > 0;
@@ -136,7 +140,7 @@ export function Preview({ playerRef }: { playerRef: RefObject<PlayerRef | null> 
           ◂
         </button>
         <button
-          className="btn btn-icon w-9 !border-ink-500"
+          className="btn btn-icon w-9 border-ink-500!"
           title="Play / pause (Space)"
           onClick={() => playerRef.current?.toggle()}
         >
@@ -153,6 +157,29 @@ export function Preview({ playerRef }: { playerRef: RefObject<PlayerRef | null> 
         </span>
         <span className="ml-1 font-mono text-[11px] text-ink-600 tabular-nums">f{frame}</span>
         <div className="ml-auto flex items-center gap-1">
+          {doc.reference ? (
+            <div className="mr-2 flex items-center gap-1.5" title="Tracing overlay of the original video (never exported)">
+              <button
+                className={`btn btn-ghost btn-icon text-xs ${showRef ? "text-accent" : "text-ink-500"}`}
+                onClick={() => setShowRef((s) => !s)}
+              >
+                ◐ Ref
+              </button>
+              {showRef ? (
+                <input
+                  type="range"
+                  className="w-20"
+                  min={0.05}
+                  max={1}
+                  step={0.05}
+                  value={doc.reference.opacity}
+                  onChange={(e) =>
+                    setDoc((d) => (d.reference ? { ...d, reference: { ...d.reference, opacity: Number(e.target.value) } } : d))
+                  }
+                />
+              ) : null}
+            </div>
+          ) : null}
           <button
             className={`btn btn-ghost btn-icon text-xs ${loop ? "text-accent" : "text-ink-500"}`}
             title="Loop playback"

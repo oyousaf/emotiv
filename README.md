@@ -43,6 +43,29 @@ npm run export:example -- vertical high  # 1080x1920, higher quality
 - **Templates**: "Save scene as template" stores a scene in SQLite, and it then shows up in Add scene and New project.
 - Edits autosave, and Ctrl+Z / Ctrl+Shift+Z undo and redo.
 
+### Importing old work
+
+The **Import** panel at the top of the dashboard builds a project from what you already have:
+
+| Drop in | What happens |
+|---|---|
+| **Old video** (MP4) | Shots are detected in the browser and each becomes a scene. The audio is extracted as the soundtrack, and the video becomes a semi-transparent **tracing overlay** ("◐ Ref" under the preview, never exported). Optionally each shot keeps its original footage as the background. |
+| **After Effects comp, Bodymovin export** (`.json`) | emotiv lists every composition inside it (main comp and precomps, with size, fps, length, layer counts, fonts and text) so you can choose one. Text layers and plain solids/rectangles become **editable** emotiv layers with matched animation presets. Everything else (shape animation, images, nested precomps) stays **pixel-exact** in a Lottie layer underneath. Sequenced precomps become separate scenes. Or choose "Play exactly as exported". |
+| **After Effects project** (`.aep` / `.aepx`) | Read in the browser (the file isn't uploaded). emotiv lists the project's compositions with their size, fps, duration, layers and text, and you pick one. It builds a correctly sized starting point with the comp's text, and records the full layer list so the AI tab can rebuild the rest. For the exact animation, export the same comp with Bodymovin. |
+| **Fonts and footage** | Uploaded alongside, so imported text renders in the right typeface. |
+
+To export from After Effects: install [Bodymovin](https://aescripts.com/bodymovin/) (free), then go to Window → Extensions → Bodymovin, tick the comp, and open Settings. Turn **Glyphs** off so the text stays live, then click Render.
+
+> Reading `.aep` binaries is best-effort: comp names and layer lists are reliable, but size, fps and duration come from fixed offsets and are only shown when they look plausible.
+
+### AI assistant (Claude Code)
+
+The editor's **AI** tab is a prompt box: "make the headline punchier", "adapt this for a 9:16 Reel", "rebuild the original comp from its layer list". It runs **your own Claude Code login** in headless mode, so there's no API key. It can only use emotiv's tools, with no shell or file access. Each edit appears in the preview as it's made, and Ctrl+Z undoes it. Follow-up prompts continue the same conversation.
+
+Requires Claude Code to be installed and signed in. emotiv finds it on `PATH` or inside the VS Code/Cursor extension; set `CLAUDE_CODE_PATH` to override.
+
+The same tools are exposed as an **MCP server** (`mcp/server.ts`, registered in `.mcp.json`). Open Claude Code in this folder (in a terminal or VS Code) and you can work on any project conversationally: list projects, read and edit scenes and layers, add templates, import local files, preview frames and queue renders.
+
 ### Seasonal theme
 
 The interface's accent colours, background tint and emoji follow the Gregorian month (seasons follow the northern hemisphere): pumpkins in October, snowflakes in January, and so on. The theme picker on the dashboard can pin any month. The palettes live in [src/lib/season.ts](src/lib/season.ts).
@@ -63,6 +86,7 @@ src/
     doc-ops.ts       Immutable editor operations
     props.ts         Project + assets → composition props
     season.ts        Monthly UI themes
+    importers/       Bodymovin → emotiv conversion, AE comp discovery (.json, .aep, .aepx)
     server/          Node-only: never imported by client code
       db.ts            node:sqlite, WAL, migrations
       repo.ts          Projects, assets, render queue, custom templates
@@ -70,10 +94,16 @@ src/
       uploads.ts       Extension allowlist + magic-byte sniffing + media probing
       files.ts         Range-capable file responses
       render.ts        Bundling, local asset server, renderMedia
+      still.ts         Single-frame previews for the assistant
+      import.ts        Builds projects from videos / AE comps
+      claude.ts        Runs Claude Code headless for the AI tab
   app/             Next.js pages and API routes
   components/      Dashboard and editor UI
 worker/
   render-worker.ts Background renderer: polls the queue and renders one job at a time
+mcp/
+  server.ts        MCP server (stdio) exposing the editing tools to Claude Code
+  tools.ts         The tools themselves
 ```
 
 - **One document drives everything.** The editor preview and the exported MP4 render the same `Main` component with the same validated document. Positions are percentages and sizes are measured against the 1080 px short side, so a project re-targets between 1920×1080 and 1080×1920.
@@ -86,17 +116,16 @@ Data lives in `./data` (git-ignored). Set `STUDIO_DATA_DIR` to put it elsewhere.
 ## Tests
 
 ```bash
-npm test             # unit + API tests (schema, timeline, animation, paths, uploads, queue, routes, theme)
+npm test             # unit + API tests (schema, timeline, animation, paths, uploads, queue, routes, theme, importers, MCP tools)
 npm run test:render  # end to end: seeds the example, bundles, renders real MP4s in both formats, verifies them
 npm run typecheck
 ```
 
 ## Roadmap
 
-Integrations planned for after the MVP, both optional and local:
-
-- **Ollama**: draft scene copy, captions and template suggestions from a brief.
 - **ComfyUI**: generate background stills and loops into the asset library.
+- **Ollama**: an offline alternative model for the AI tab.
+- Calibrate `.aep` metadata decoding against more real projects.
 
 ## Licensing
 

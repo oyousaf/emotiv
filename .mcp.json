@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "emotiv": {
+      "command": "node",
+      "args": ["node_modules/tsx/dist/cli.mjs", "mcp/server.ts"]
+    }
+  }
+}

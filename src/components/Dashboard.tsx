@@ -10,6 +10,7 @@ import { FORMATS, type CompositionProps, type FormatId } from "@/lib/schema";
 import { framesToTimecode, getTotalDuration } from "@/lib/timeline";
 import type { ProjectSummary } from "@/lib/types";
 import { api } from "./api";
+import { ImportPanel } from "./import/ImportPanel";
 import { RenderList } from "./RenderList";
 import { SeasonalEmoji, ThemePicker } from "./SeasonalTheme";
 import { APP_HEADLINE, APP_NAME, APP_TAGLINE } from "@/lib/brand";
@@ -111,8 +112,12 @@ export function Dashboard({ projects, templates }: { projects: DashboardProject[
 
       <div className="grid gap-8 lg:grid-cols-[1fr_340px]">
         <main>
+          <div className="mb-4">
+            <ImportPanel />
+          </div>
+
           <form onSubmit={create} className="mb-8 rounded-xl border border-ink-700 bg-ink-900 p-4">
-            <h2 className="panel-title mb-3">New project</h2>
+            <h2 className="panel-title mb-3">Or start a new project</h2>
             <div className="grid gap-3 sm:grid-cols-[1fr_auto_1fr_auto] sm:items-end">
               <label>
                 <span className="label">Name</span>
@@ -150,6 +155,7 @@ export function Dashboard({ projects, templates }: { projects: DashboardProject[
             </div>
             {error ? <p className="mt-2 text-sm text-bad">{error}</p> : null}
           </form>
+
 
           <h2 className="panel-title mb-3">Projects</h2>
           {projects.length === 0 ? (

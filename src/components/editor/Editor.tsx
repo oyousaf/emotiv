@@ -9,6 +9,7 @@ import type { AssetRecord, CustomTemplate, ProjectRecord } from "@/lib/types";
 import { api } from "../api";
 import { SeasonalEmoji } from "../SeasonalTheme";
 import { AssetsPanel } from "./AssetsPanel";
+import { AssistantPanel } from "./AssistantPanel";
 import { EditorContext, type BuiltinTemplateInfo, type EditorApi, type Selection } from "./context";
 import { ExportPanel } from "./ExportPanel";
 import { Inspector } from "./Inspector";
@@ -17,7 +18,7 @@ import { ScenesPanel } from "./ScenesPanel";
 import { useHistory } from "./useHistory";
 
 type SaveState = "saved" | "pending" | "saving" | "error";
-type Tab = "scenes" | "assets" | "export";
+type Tab = "scenes" | "assets" | "ai" | "export";
 
 export function Editor({
   project,
@@ -45,17 +46,21 @@ export function Editor({
   const element = scene.elements.find((e) => e.id === selection.elementId) ?? null;
 
   // ------------------------------------------------------------ autosave
-  const firstRender = useRef(true);
+  // The last server version we know about, and the doc/name it gave us, so a
+  // change pulled from the server (an AI edit) isn't saved straight back.
+  const serverVersion = useRef(project.updatedAt);
+  const fromServer = useRef<{ doc: ProjectDoc; name: string }>({ doc: project.doc, name: project.name });
+  const saveState = useRef<SaveState>("saved");
+  saveState.current = save.state;
+
   useEffect(() => {
-    if (firstRender.current) {
-      firstRender.current = false;
-      return;
-    }
+    if (doc === fromServer.current.doc && name === fromServer.current.name) return;
     setSave({ state: "pending" });
     const t = setTimeout(async () => {
       setSave({ state: "saving" });
       try {
-        await api.saveProject(project.id, { name, doc });
+        const saved = await api.saveProject(project.id, { name, doc });
+        serverVersion.current = saved.updatedAt;
         setSave({ state: "saved" });
       } catch (e) {
         setSave({ state: "error", error: (e as Error).message });
@@ -63,6 +68,26 @@ export function Editor({
     }, 700);
     return () => clearTimeout(t);
   }, [doc, name, project.id]);
+
+  // ------------------------------------------- pick up edits made elsewhere
+  // (the AI tab, or Claude Code via MCP). Local unsaved edits always win.
+  const { set: setHistory } = history;
+  const refreshFromServer = useCallback(async () => {
+    const res = await fetch(`/api/projects/${project.id}`, { cache: "no-store" });
+    if (!res.ok) return;
+    const p = (await res.json()) as ProjectRecord & { assets: AssetRecord[] };
+    setAssets((prev) => (prev.map((a) => a.id).join() === p.assets.map((a) => a.id).join() ? prev : p.assets));
+    if (p.updatedAt <= serverVersion.current || saveState.current !== "saved") return;
+    serverVersion.current = p.updatedAt;
+    fromServer.current = { doc: p.doc, name: p.name };
+    setHistory(() => p.doc);
+    setName(p.name);
+  }, [project.id, setHistory]);
+
+  useEffect(() => {
+    const t = setInterval(() => document.visibilityState === "visible" && refreshFromServer(), 2500);
+    return () => clearInterval(t);
+  }, [refreshFromServer]);
 
   useEffect(() => {
     const warn = (e: BeforeUnloadEvent) => {
@@ -98,6 +123,16 @@ export function Editor({
 
   const docRef = useRef(doc);
   docRef.current = doc;
+  const nameRef = useRef(name);
+  nameRef.current = name;
+  /** Save immediately (before the AI reads the project). */
+  const saveNow = useCallback(async () => {
+    const snapshot = { doc: docRef.current, name: nameRef.current };
+    const saved = await api.saveProject(project.id, snapshot);
+    serverVersion.current = saved.updatedAt;
+    fromServer.current = snapshot;
+    setSave({ state: "saved" });
+  }, [project.id]);
   const select = useCallback(
     (sel: Selection, opts?: { seek?: boolean }) => {
       setSelection(sel);
@@ -140,6 +175,9 @@ export function Editor({
     builtinTemplates,
     customTemplates,
     refreshTemplates,
+    refreshFromServer,
+    saveNow,
+    projectName: name,
   };
 
   return (
@@ -172,7 +210,7 @@ export function Editor({
             >
               {save.state === "saved" ? "Saved" : save.state === "error" ? "Save failed" : "Saving…"}
             </span>
-            <button className="btn btn-primary ml-2 !py-1 text-xs" onClick={() => setTab("export")}>
+            <button className="btn btn-primary ml-2 py-1! text-xs" onClick={() => setTab("export")}>
               Export
             </button>
           </div>
@@ -181,7 +219,7 @@ export function Editor({
         <div className="grid min-h-0 flex-1 grid-cols-[260px_1fr_320px]">
           <aside className="flex min-h-0 flex-col border-r border-ink-800 bg-ink-900">
             <nav className="flex shrink-0 border-b border-ink-800 text-xs">
-              {(["scenes", "assets", "export"] as Tab[]).map((t) => (
+              {(["scenes", "assets", "ai", "export"] as Tab[]).map((t) => (
                 <button
                   key={t}
                   onClick={() => setTab(t)}
@@ -194,7 +232,7 @@ export function Editor({
               ))}
             </nav>
             <div className="min-h-0 flex-1 overflow-y-auto">
-              {tab === "scenes" ? <ScenesPanel /> : tab === "assets" ? <AssetsPanel /> : <ExportPanel />}
+              {tab === "scenes" ? <ScenesPanel /> : tab === "assets" ? <AssetsPanel /> : tab === "ai" ? <AssistantPanel /> : <ExportPanel />}
             </div>
           </aside>
 

@@ -45,7 +45,29 @@ export const UPLOAD_RULES: Record<string, Rule> = {
   otf: { kind: "font", mime: "font/otf", maxBytes: 20 * MB, sniff: (b) => ascii(b, 0, "OTTO") },
   woff: { kind: "font", mime: "font/woff", maxBytes: 20 * MB, sniff: (b) => ascii(b, 0, "wOFF") },
   woff2: { kind: "font", mime: "font/woff2", maxBytes: 20 * MB, sniff: (b) => ascii(b, 0, "wOF2") },
+  json: { kind: "lottie", mime: "application/json", maxBytes: 50 * MB, sniff: (b) => /^\s*\{/.test(b.subarray(0, 64).toString("utf8")) },
 };
+
+export type LottieInfo = { w: number; h: number; fr: number; ip: number; op: number };
+
+/** Bodymovin/Lottie exports are JSON with a frame rate, size, in/out points and layers. */
+export function parseLottie(buf: Buffer): (LottieInfo & Record<string, unknown>) | null {
+  try {
+    const j = JSON.parse(buf.toString("utf8"));
+    const ok =
+      j &&
+      typeof j === "object" &&
+      [j.w, j.h, j.fr, j.ip, j.op].every((n) => typeof n === "number" && Number.isFinite(n)) &&
+      j.w > 0 &&
+      j.h > 0 &&
+      j.fr > 0 &&
+      j.op > j.ip &&
+      Array.isArray(j.layers);
+    return ok ? j : null;
+  } catch {
+    return null;
+  }
+}
 
 export const ACCEPT_ATTR = Object.keys(UPLOAD_RULES)
   .map((e) => `.${e}`)
@@ -85,6 +107,12 @@ export type ValidatedUpload = {
 export async function validateUpload(name: string, buf: Buffer): Promise<ValidatedUpload> {
   const ext = path.extname(name).slice(1).toLowerCase();
   const rule = UPLOAD_RULES[ext];
+  if (ext === "aep" || ext === "aepx") {
+    throw new UploadError(
+      "After Effects project files can't be read directly. In After Effects, export the comp with the free Bodymovin plugin (Lottie .json) and import that instead.",
+      415,
+    );
+  }
   if (!rule) throw new UploadError(`Unsupported file type ".${ext}". Allowed: ${Object.keys(UPLOAD_RULES).join(", ")}`, 415);
   if (buf.length === 0) throw new UploadError("File is empty");
   if (buf.length > rule.maxBytes) throw new UploadError(`File is larger than ${rule.maxBytes / MB} MB`, 413);
@@ -99,6 +127,13 @@ export async function validateUpload(name: string, buf: Buffer): Promise<Validat
     if (rule.kind === "video" && probe.width == null) throw new UploadError("This MP4 has no video track", 422);
     if (rule.kind === "audio" && !probe.hasAudio) throw new UploadError("This file has no audio track", 422);
     ({ durationInSeconds, width, height } = probe);
+  }
+  if (rule.kind === "lottie") {
+    const lottie = parseLottie(buf);
+    if (!lottie) throw new UploadError("This JSON isn't a Lottie/Bodymovin animation", 422);
+    durationInSeconds = (lottie.op - lottie.ip) / lottie.fr;
+    width = lottie.w;
+    height = lottie.h;
   }
   return { ext, rule, name: cleanDisplayName(name), durationInSeconds, width, height };
 }

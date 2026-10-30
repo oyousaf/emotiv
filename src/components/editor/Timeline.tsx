@@ -5,7 +5,7 @@ import { updateElement, updateScene } from "@/lib/doc-ops";
 import { elementWindow, getSceneTimings } from "@/lib/timeline";
 import { useEditor } from "./context";
 
-const ELEMENT_COLORS = { text: "bg-accent/70", shape: "bg-cyan/60", image: "bg-warn/60" } as const;
+const ELEMENT_COLORS = { text: "bg-accent/70", shape: "bg-cyan/60", image: "bg-warn/60", lottie: "bg-ok/60" } as const;
 
 /**
  * Horizontal drag helper: reports the drag distance in whole frames.

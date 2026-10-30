@@ -86,7 +86,7 @@ export function ThemePicker() {
     <label className="flex items-center gap-2 text-xs text-ink-400">
       <span className="hidden sm:inline">Theme</span>
       <select
-        className="field !w-auto !py-1 text-xs"
+        className="field w-auto! py-1! text-xs"
         value={String(choice)}
         onChange={(e) => setChoice(e.target.value === "auto" ? "auto" : Number(e.target.value))}
       >

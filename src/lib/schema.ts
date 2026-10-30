@@ -141,7 +141,19 @@ export const imageElement = z.object({
 });
 export type ImageElement = z.infer<typeof imageElement>;
 
-export const element = z.discriminatedUnion("type", [textElement, shapeElement, imageElement]);
+/** A Bodymovin/Lottie animation, played with its original keyframes. */
+export const lottieElement = z.object({
+  ...elementBase,
+  type: z.literal("lottie"),
+  assetId: id,
+  playbackRate: z.number().min(0.25).max(4).default(1),
+  repeat: z.boolean().default(false),
+  /** Frames (at 30 fps) to skip into the animation, e.g. one section of a long export. */
+  offset: z.number().int().min(0).default(0),
+});
+export type LottieElement = z.infer<typeof lottieElement>;
+
+export const element = z.discriminatedUnion("type", [textElement, shapeElement, imageElement, lottieElement]);
 export type SceneElement = z.infer<typeof element>;
 export type ElementType = SceneElement["type"];
 
@@ -164,6 +176,9 @@ export const background = z.discriminatedUnion("type", [
     assetId: id,
     dim: z.number().min(0).max(1).default(0.3),
     playbackRate: z.number().min(0.25).max(4).default(1),
+    /** Frames to skip into the footage, so imported shots line up with the original. */
+    trimBefore: z.number().int().min(0).default(0),
+    loop: z.boolean().default(true),
   }),
 ]);
 export type Background = z.infer<typeof background>;
@@ -194,10 +209,36 @@ export const projectDoc = z.object({
   format: z.enum(["landscape", "vertical"]).default("landscape"),
   scenes: z.array(scene).min(1).max(100),
   soundtrack: soundtrack.nullable().default(null),
+  /**
+   * An old video to trace over in the editor. Shown semi-transparent on top of
+   * the preview only; it is never part of an export.
+   */
+  reference: z
+    .object({ assetId: id, opacity: z.number().min(0).max(1).default(0.5) })
+    .nullable()
+    .default(null),
+  /**
+   * What the project was rebuilt from (e.g. one After Effects comp), kept so
+   * the AI assistant can use the original's layer list and timings.
+   */
+  source: z
+    .object({
+      kind: z.enum(["aep", "lottie", "video"]),
+      file: z.string().max(200),
+      comp: z.string().max(200).nullable().default(null),
+      width: z.number().nullable().default(null),
+      height: z.number().nullable().default(null),
+      fps: z.number().nullable().default(null),
+      durationSeconds: z.number().nullable().default(null),
+      layers: z.array(z.object({ name: z.string().max(200), type: z.string().max(20) })).max(500).default([]),
+      texts: z.array(z.string().max(500)).max(20).default([]),
+    })
+    .nullable()
+    .default(null),
 });
 export type ProjectDoc = z.infer<typeof projectDoc>;
 
-export const ASSET_KINDS = ["video", "image", "audio", "font"] as const;
+export const ASSET_KINDS = ["video", "image", "audio", "font", "lottie"] as const;
 export type AssetKind = (typeof ASSET_KINDS)[number];
 
 /** What a composition needs to know about an asset; built server-side. */
@@ -208,6 +249,8 @@ export const resolvedAsset = z.object({
   name: z.string(),
   family: fontFamily.nullable().default(null),
   durationInSeconds: z.number().nullable().default(null),
+  width: z.number().nullable().default(null),
+  height: z.number().nullable().default(null),
 });
 export type ResolvedAsset = z.infer<typeof resolvedAsset>;
 
@@ -216,6 +259,8 @@ export const compositionProps = z.object({
   assets: z.record(z.string(), resolvedAsset),
   /** Overrides doc.format; lets one project export both aspect ratios. */
   format: z.enum(["landscape", "vertical"]).optional(),
+  /** Editor preview only: draw doc.reference on top. Renders never set this. */
+  showReference: z.boolean().optional(),
 });
 export type CompositionProps = z.infer<typeof compositionProps>;
 

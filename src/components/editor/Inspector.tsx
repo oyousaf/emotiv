@@ -67,7 +67,7 @@ function SceneInspector() {
     if (type === "color") setBg({ type, color: "#111118" });
     if (type === "gradient") setBg({ type, from: "#12062b", to: "#5b12a8", angle: 135 });
     if (type === "image" && images[0]) setBg({ type, assetId: images[0].id, dim: 0.3, kenBurns: true });
-    if (type === "video" && videos[0]) setBg({ type, assetId: videos[0].id, dim: 0.3, playbackRate: 1 });
+    if (type === "video" && videos[0]) setBg({ type, assetId: videos[0].id, dim: 0.3, playbackRate: 1, trimBefore: 0, loop: true });
   };
 
   const add = (el: SceneElement) => {
@@ -161,7 +161,17 @@ function SceneInspector() {
             {bg.type === "image" ? (
               <Toggle label="Slow zoom (Ken Burns)" checked={bg.kenBurns} onChange={(v) => setBg({ ...bg, kenBurns: v })} />
             ) : (
-              <RangeField label="Speed" min={0.25} max={4} step={0.25} value={bg.playbackRate} format={(v) => `${v}×`} onChange={(v) => setBg({ ...bg, playbackRate: v })} />
+              <>
+                <RangeField label="Speed" min={0.25} max={4} step={0.25} value={bg.playbackRate} format={(v) => `${v}×`} onChange={(v) => setBg({ ...bg, playbackRate: v })} />
+                <NumberField
+                  label="Start into clip (frames)"
+                  value={bg.trimBefore}
+                  min={0}
+                  suffix={`${(bg.trimBefore / doc.fps).toFixed(1)}s`}
+                  onChange={(trimBefore) => setBg({ ...bg, trimBefore })}
+                />
+                <Toggle label="Loop if the clip is shorter" checked={bg.loop} onChange={(loop) => setBg({ ...bg, loop })} />
+              </>
             )}
           </>
         ) : null}
@@ -171,10 +181,10 @@ function SceneInspector() {
         title="Layers"
         actions={
           <div className="flex gap-1">
-            <button className="btn !px-2 !py-0.5 text-[11px]" onClick={() => add(text({ name: "Text", text: "New text", fontSize: 96 }))}>
+            <button className="btn px-2! py-0.5! text-[11px]" onClick={() => add(text({ name: "Text", text: "New text", fontSize: 96 }))}>
               + Text
             </button>
-            <button className="btn !px-2 !py-0.5 text-[11px]" onClick={() => add(shape({ name: "Shape", width: 30, height: 12, animIn: { preset: "wipeRight" } }))}>
+            <button className="btn px-2! py-0.5! text-[11px]" onClick={() => add(shape({ name: "Shape", width: 30, height: 12, animIn: { preset: "wipeRight" } }))}>
               + Shape
             </button>
           </div>
@@ -290,6 +300,35 @@ function ElementInspector() {
             options={assets.filter((a) => a.kind === "image").map((a) => ({ value: a.id, label: a.name }))}
             onChange={(assetId) => set({ assetId })}
           />
+        </Section>
+      ) : null}
+      {el.type === "lottie" ? (
+        <Section title="After Effects animation">
+          <SelectField
+            label="Lottie file"
+            value={el.assetId}
+            options={assets.filter((a) => a.kind === "lottie").map((a) => ({ value: a.id, label: a.name }))}
+            onChange={(assetId) => set({ assetId })}
+          />
+          <div className="grid grid-cols-2 gap-2">
+            <NumberField
+              label="Start into animation"
+              value={el.offset}
+              min={0}
+              suffix="f"
+              onChange={(offset) => set({ offset } as Partial<SceneElement>)}
+            />
+            <RangeField
+              label="Speed"
+              min={0.25}
+              max={4}
+              step={0.25}
+              value={el.playbackRate}
+              format={(v) => `${v}×`}
+              onChange={(playbackRate) => set({ playbackRate } as Partial<SceneElement>)}
+            />
+          </div>
+          <Toggle label="Loop" checked={el.repeat} onChange={(repeat) => set({ repeat } as Partial<SceneElement>)} />
         </Section>
       ) : null}
 

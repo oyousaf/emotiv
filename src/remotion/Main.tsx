@@ -68,7 +68,8 @@ const SceneBackground: React.FC<{ scene: Scene; assets: Assets }> = ({ scene, as
             <Video
               src={asset.url}
               muted
-              loop
+              loop={bg.loop}
+              trimBefore={bg.trimBefore || undefined}
               playbackRate={bg.playbackRate}
               objectFit="cover"
               style={{ width: "100%", height: "100%" }}
@@ -153,6 +154,19 @@ export const Main: React.FC<CompositionProps> = (props) => {
         })}
       </TransitionSeries>
       <Soundtrack props={props} />
+      <ReferenceOverlay props={props} />
+    </AbsoluteFill>
+  );
+};
+
+/** The old video on top, semi-transparent, for tracing. Preview only. */
+const ReferenceOverlay: React.FC<{ props: CompositionProps }> = ({ props }) => {
+  const ref = props.doc.reference;
+  const asset = ref ? props.assets[ref.assetId] : undefined;
+  if (!props.showReference || !ref || asset?.kind !== "video") return null;
+  return (
+    <AbsoluteFill style={{ opacity: ref.opacity, pointerEvents: "none" }}>
+      <Video src={asset.url} muted objectFit="contain" style={{ width: "100%", height: "100%" }} />
     </AbsoluteFill>
   );
 };

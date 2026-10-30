@@ -100,20 +100,20 @@ export function RenderList({ projectId, refreshKey = 0, compact = false }: { pro
             <div className="mt-2 flex flex-wrap gap-1.5">
               {job.status === "done" ? (
                 <>
-                  <a className="btn btn-primary !py-1 text-xs" href={`/api/renders/${job.id}/download`}>
+                  <a className="btn btn-primary py-1! text-xs" href={`/api/renders/${job.id}/download`}>
                     Download MP4
                   </a>
-                  <a className="btn !py-1 text-xs" href={`/api/renders/${job.id}/download?inline`} target="_blank" rel="noreferrer">
+                  <a className="btn py-1! text-xs" href={`/api/renders/${job.id}/download?inline`} target="_blank" rel="noreferrer">
                     Watch
                   </a>
                 </>
               ) : null}
               {job.status === "queued" || job.status === "rendering" ? (
-                <button className="btn !py-1 text-xs" onClick={() => act(() => api.cancelRender(job.id))}>
+                <button className="btn py-1! text-xs" onClick={() => act(() => api.cancelRender(job.id))}>
                   Cancel
                 </button>
               ) : (
-                <button className="btn btn-ghost !py-1 text-xs text-ink-400" onClick={() => act(() => api.deleteRender(job.id))}>
+                <button className="btn btn-ghost py-1! text-xs text-ink-400" onClick={() => act(() => api.deleteRender(job.id))}>
                   Remove
                 </button>
               )}

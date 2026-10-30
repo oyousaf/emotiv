@@ -23,7 +23,7 @@ export function ScenesPanel() {
     <div className="p-3">
       <div className="mb-2 flex items-center justify-between">
         <h3 className="panel-title">Scenes</h3>
-        <button className="btn !py-1 text-xs" onClick={() => setAdding((a) => !a)}>
+        <button className="btn py-1! text-xs" onClick={() => setAdding((a) => !a)}>
           {adding ? "Close" : "+ Add scene"}
         </button>
       </div>

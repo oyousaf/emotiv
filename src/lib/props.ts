@@ -21,6 +21,8 @@ export function buildCompositionProps(
       name: a.name,
       family: a.family,
       durationInSeconds: a.durationInSeconds,
+      width: a.width,
+      height: a.height,
     };
   }
   return { doc, assets: resolved, format: format ?? doc.format };

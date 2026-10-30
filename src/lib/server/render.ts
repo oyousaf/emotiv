@@ -17,11 +17,12 @@ import { mimeForFile } from "./uploads";
  */
 
 export const COMPOSITION_ID = "Main";
-const ENTRY = path.join(process.cwd(), "src", "remotion", "index.ts");
-const WATCHED = [path.join(process.cwd(), "src", "remotion"), path.join(process.cwd(), "src", "lib")];
+// Resolved lazily: the MCP server changes directory to the app root after imports load.
+const entry = () => path.join(process.cwd(), "src", "remotion", "index.ts");
+const watched = () => [path.join(process.cwd(), "src", "remotion"), path.join(process.cwd(), "src", "lib")];
 
 export async function createBundle(onProgress?: (p: number) => void): Promise<string> {
-  return bundle({ entryPoint: ENTRY, onProgress: (p) => onProgress?.(p / 100) });
+  return bundle({ entryPoint: entry(), onProgress: (p) => onProgress?.(p / 100) });
 }
 
 /** Newest mtime of the composition sources, to know when to rebundle in dev. */
@@ -34,7 +35,7 @@ export function sourcesVersion(): number {
       else latest = Math.max(latest, fs.statSync(p).mtimeMs);
     }
   };
-  WATCHED.filter((d) => fs.existsSync(d)).forEach(walk);
+  watched().filter((d) => fs.existsSync(d)).forEach(walk);
   return latest;
 }
 

@@ -23,6 +23,10 @@ export type EditorApi = {
   builtinTemplates: BuiltinTemplateInfo[];
   customTemplates: (CustomTemplate & { scene: Scene })[];
   refreshTemplates: () => Promise<void>;
+  /** Pull edits made outside the editor (AI tab, Claude Code). */
+  refreshFromServer: () => Promise<void>;
+  projectName: string;
+  saveNow: () => Promise<void>;
 };
 
 export const EditorContext = createContext<EditorApi | null>(null);

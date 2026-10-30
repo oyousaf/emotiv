@@ -4,16 +4,16 @@ import { useRef, useState } from "react";
 import { addElement, updateElement, updateScene } from "@/lib/doc-ops";
 import { editorAssetUrl } from "@/lib/props";
 import { fontStack } from "@/remotion/elements";
-import { imageElement, type AssetKind } from "@/lib/schema";
+import { imageElement, lottieElement, type AssetKind } from "@/lib/schema";
 import { newId } from "@/lib/templates";
 import type { AssetRecord } from "@/lib/types";
 import { api } from "../api";
 import { useEditor } from "./context";
 
 /** Must match UPLOAD_RULES in lib/server/uploads.ts (a test checks this). */
-export const UPLOAD_EXTENSIONS = ["mp4", "m4v", "png", "jpg", "jpeg", "webp", "gif", "mp3", "wav", "m4a", "ogg", "ttf", "otf", "woff", "woff2"];
+export const UPLOAD_EXTENSIONS = ["mp4", "m4v", "png", "jpg", "jpeg", "webp", "gif", "mp3", "wav", "m4a", "ogg", "ttf", "otf", "woff", "woff2", "json"];
 
-const KIND_LABEL: Record<AssetKind, string> = { video: "Video", image: "Images", audio: "Audio", font: "Fonts" };
+const KIND_LABEL: Record<AssetKind, string> = { video: "Video", image: "Images", audio: "Audio", font: "Fonts", lottie: "Lottie animations" };
 
 function uploadWithProgress(projectId: string, files: File[], onProgress: (p: number) => void) {
   return new Promise<AssetRecord[]>((resolve, reject) => {
@@ -67,7 +67,7 @@ export function AssetsPanel() {
     }
   };
 
-  const grouped = (["video", "image", "audio", "font"] as AssetKind[]).map((kind) => ({
+  const grouped = (["video", "lottie", "image", "audio", "font"] as AssetKind[]).map((kind) => ({
     kind,
     items: assets.filter((a) => a.kind === kind),
   }));
@@ -91,7 +91,7 @@ export function AssetsPanel() {
         }`}
       >
         <div className="text-sm text-ink-200">Drop files or click to upload</div>
-        <div className="mt-1 text-[11px] text-ink-500">MP4 · PNG/JPG/WebP/GIF · MP3/WAV/M4A/OGG · TTF/OTF/WOFF</div>
+        <div className="mt-1 text-[11px] text-ink-500">MP4 · PNG/JPG/WebP/GIF · MP3/WAV/M4A/OGG · TTF/OTF/WOFF · Lottie JSON</div>
         <input
           ref={input}
           type="file"
@@ -128,6 +128,8 @@ export function AssetsPanel() {
                           <img src={url} alt="" className="h-full w-full object-contain" />
                         ) : kind === "video" ? (
                           <video src={url} muted preload="metadata" className="h-full w-full object-cover" />
+                        ) : kind === "lottie" ? (
+                          <span className="text-xs font-semibold text-ok">AE</span>
                         ) : kind === "font" ? (
                           <span style={{ fontFamily: fontStack(a.family ?? "") }} className="text-lg text-white">
                             Aa
@@ -169,8 +171,28 @@ export function AssetsPanel() {
                         </>
                       ) : null}
                       {kind === "video" ? (
-                        <Action onClick={() => setDoc((d) => updateScene(d, scene.id, { background: { type: "video", assetId: a.id, dim: 0.3, playbackRate: 1 } }))}>
+                        <Action onClick={() => setDoc((d) => updateScene(d, scene.id, { background: { type: "video", assetId: a.id, dim: 0.3, playbackRate: 1, trimBefore: 0, loop: true } }))}>
                           Use as background
+                        </Action>
+                      ) : null}
+                      {kind === "video" ? (
+                        <Action
+                          onClick={() =>
+                            setDoc((d) => ({ ...d, reference: d.reference?.assetId === a.id ? null : { assetId: a.id, opacity: 0.5 } }))
+                          }
+                        >
+                          {doc.reference?.assetId === a.id ? "Stop tracing" : "Trace over it"}
+                        </Action>
+                      ) : null}
+                      {kind === "lottie" ? (
+                        <Action
+                          onClick={() => {
+                            const el = lottieElement.parse({ id: newId("el"), type: "lottie", name: a.name, assetId: a.id, width: 100, animIn: { preset: "none" } });
+                            setDoc((d) => addElement(d, scene.id, el));
+                            select({ sceneId: scene.id, elementId: el.id });
+                          }}
+                        >
+                          Add to scene
                         </Action>
                       ) : null}
                       {kind === "audio" ? (
