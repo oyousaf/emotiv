@@ -39,7 +39,8 @@ export const api = {
   enqueueRender: (projectId: string, format: FormatId, quality: RenderQuality) =>
     request<RenderJob>(`/api/projects/${projectId}/renders`, jsonInit("POST", { format, quality })),
   cancelRender: (id: string) => request<RenderJob>(`/api/renders/${id}/cancel`, { method: "POST" }),
-  deleteRender: (id: string) => request<{ ok: true }>(`/api/renders/${id}`, { method: "DELETE" }),
+  deleteRender: (id: string, deleteFile = false) =>
+    request<{ ok: true }>(`/api/renders/${id}${deleteFile ? "?file" : ""}`, { method: "DELETE" }),
   workerStatus: () => request<{ online: boolean; lastSeen: number | null }>("/api/worker"),
 
   listTemplates: () =>

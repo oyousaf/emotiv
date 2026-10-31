@@ -6,6 +6,7 @@ import {
   claimNextRender,
   createProject,
   deleteProject,
+  deleteRender,
   enqueueRender,
   finishRender,
   getProject,
@@ -98,7 +99,7 @@ describe("render queue", () => {
 });
 
 describe("deleting a project", () => {
-  it("removes its folder, renders and output files", () => {
+  it("removes its folder and render jobs but keeps finished MP4s", () => {
     const p = createProject("Doomed", blankDoc());
     const job = enqueueRender(p.id, "landscape", "draft");
     claimNextRender();
@@ -106,8 +107,32 @@ describe("deleting a project", () => {
     finishRender(job.id, { outputFile: `${job.id}.mp4` });
     expect(deleteProject(p.id)).toBe(true);
     expect(fs.existsSync(projectDir(p.id))).toBe(false);
-    expect(fs.existsSync(renderPath(`${job.id}.mp4`))).toBe(false);
+    expect(fs.existsSync(renderPath(`${job.id}.mp4`))).toBe(true);
     expect(getRender(job.id)).toBeNull();
+  });
+});
+
+describe("removing a render", () => {
+  const finished = () => {
+    const p = createProject("Kept", blankDoc());
+    const job = enqueueRender(p.id, "vertical", "draft");
+    claimNextRender();
+    fs.writeFileSync(renderPath(`${job.id}.mp4`), "x");
+    finishRender(job.id, { outputFile: `${job.id}.mp4` });
+    return job;
+  };
+
+  it("keeps the MP4 by default", () => {
+    const job = finished();
+    expect(deleteRender(job.id)).toBe(true);
+    expect(getRender(job.id)).toBeNull();
+    expect(fs.existsSync(renderPath(`${job.id}.mp4`))).toBe(true);
+  });
+
+  it("deletes the MP4 when asked", () => {
+    const job = finished();
+    expect(deleteRender(job.id, { deleteFile: true })).toBe(true);
+    expect(fs.existsSync(renderPath(`${job.id}.mp4`))).toBe(false);
   });
 });
 

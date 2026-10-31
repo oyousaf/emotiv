@@ -113,9 +113,27 @@ export function RenderList({ projectId, refreshKey = 0, compact = false }: { pro
                   Cancel
                 </button>
               ) : (
-                <button className="btn btn-ghost py-1! text-xs text-ink-400" onClick={() => act(() => api.deleteRender(job.id))}>
-                  Remove
-                </button>
+                <>
+                  <button
+                    className="btn btn-ghost py-1! text-xs text-ink-400"
+                    title={job.outputFile ? `Hide from this list. ${job.outputFile} stays in data/renders.` : "Hide from this list."}
+                    onClick={() => act(() => api.deleteRender(job.id))}
+                  >
+                    Remove
+                  </button>
+                  {job.outputFile ? (
+                    <button
+                      className="btn btn-ghost py-1! text-xs text-bad/80"
+                      onClick={() => {
+                        if (confirm(`Delete ${job.outputFile} from data/renders? This can't be undone.`)) {
+                          act(() => api.deleteRender(job.id, true));
+                        }
+                      }}
+                    >
+                      Delete file
+                    </button>
+                  ) : null}
+                </>
               )}
             </div>
           </li>

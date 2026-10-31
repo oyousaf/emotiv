@@ -69,16 +69,12 @@ export function updateProject(id: string, patch: { name?: string; doc?: ProjectD
   return getProject(id);
 }
 
+/** Finished MP4s are kept in the renders folder; only the project and its assets go. */
 export function deleteProject(id: string): boolean {
   assertSafeId(id);
-  const db = getDb();
-  const renders = db.prepare("SELECT output_file FROM renders WHERE project_id = ?").all(id) as Row[];
-  const result = db.prepare("DELETE FROM projects WHERE id = ?").run(id);
+  const result = getDb().prepare("DELETE FROM projects WHERE id = ?").run(id);
   if (result.changes === 0) return false;
   fs.rmSync(projectDir(id), { recursive: true, force: true });
-  for (const r of renders) {
-    if (r.output_file) fs.rmSync(renderPath(r.output_file as string), { force: true });
-  }
   return true;
 }
 
@@ -246,11 +242,15 @@ export function requeueStaleRenders(): number {
   );
 }
 
-export function deleteRender(id: string): boolean {
+/**
+ * Removes a job from the list. The MP4 stays in the renders folder (people post
+ * straight from it) unless deleteFile is set.
+ */
+export function deleteRender(id: string, { deleteFile = false } = {}): boolean {
   const job = getRender(id);
   if (!job || job.status === "rendering") return false;
   getDb().prepare("DELETE FROM renders WHERE id = ?").run(id);
-  if (job.outputFile) fs.rmSync(renderPath(job.outputFile), { force: true });
+  if (deleteFile && job.outputFile) fs.rmSync(renderPath(job.outputFile), { force: true });
   return true;
 }
 

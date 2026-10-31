@@ -8,8 +8,10 @@ export const GET = handle(async (_req: Request, { params }: P) => {
   return job ? json(job) : notFound("Render not found");
 });
 
-export const DELETE = handle(async (_req: Request, { params }: P) => {
+/** Removes the job from the list; ?file also deletes its MP4 from the renders folder. */
+export const DELETE = handle(async (req: Request, { params }: P) => {
   const { id } = await params;
   if (!getRender(id)) return notFound("Render not found");
-  return deleteRender(id) ? json({ ok: true }) : json({ error: "Cancel the render before deleting it" }, 409);
+  const deleteFile = new URL(req.url).searchParams.has("file");
+  return deleteRender(id, { deleteFile }) ? json({ ok: true }) : json({ error: "Cancel the render before deleting it" }, 409);
 });

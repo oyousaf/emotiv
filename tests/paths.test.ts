@@ -1,6 +1,6 @@
 import path from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
-import { assetPath, isSafeFileName, PathError, projectDir, renderPath, safeJoin } from "@/lib/server/paths";
+import { assetPath, isSafeFileName, PathError, projectDir, renderFileName, renderPath, safeJoin } from "@/lib/server/paths";
 import { useTempDataDir } from "./helpers";
 
 const tmp = useTempDataDir();
@@ -29,5 +29,15 @@ describe("path safety", () => {
     }
     expect(() => assetPath("prj_a", "../../studio.db")).toThrow(PathError);
     expect(() => renderPath("..\\studio.db")).toThrow(PathError);
+  });
+});
+
+describe("render file names", () => {
+  it("are readable, unique and safe", () => {
+    const name = renderFileName("Al-Jathiyah 1–5 · English", "rnd_baa99b8caa");
+    expect(name).toBe("al-jathiyah-1-5-english-rnd_baa99b8caa.mp4");
+    expect(isSafeFileName(name)).toBe(true);
+    expect(isSafeFileName(renderFileName("x".repeat(100), "rnd_baa99b8caa"))).toBe(true);
+    expect(renderFileName("🎬", "rnd_baa99b8caa")).toBe("render-rnd_baa99b8caa.mp4");
   });
 });

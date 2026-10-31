@@ -6,7 +6,7 @@
 import { ensureBrowser } from "@remotion/renderer";
 import { buildCompositionProps } from "../src/lib/props";
 import { writeHeartbeat } from "../src/lib/server/heartbeat";
-import { renderPath } from "../src/lib/server/paths";
+import { renderFileName, renderPath } from "../src/lib/server/paths";
 import { createBundle, renderToFile, sourcesVersion, startAssetServer } from "../src/lib/server/render";
 import {
   claimNextRender,
@@ -57,7 +57,7 @@ async function processJob(assetBaseUrl: string): Promise<boolean> {
       (a) => `${assetBaseUrl}/${a.projectId}/${a.fileName}`,
       job.format,
     );
-    const outputFile = `${job.id}.mp4`;
+    const outputFile = renderFileName(job.snapshot.projectName, job.id);
     let lastWrite = 0;
     await renderToFile({
       serveUrl,

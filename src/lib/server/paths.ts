@@ -54,6 +54,17 @@ export function rendersDir(): string {
   return path.join(getDataDir(), "renders");
 }
 
+/** "Al-Jathiyah 1–5 · English" → "al-jathiyah-1-5-english". */
+export function slugify(name: string, fallback = "render"): string {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || fallback;
+}
+
+/** A readable, unique MP4 name, so the renders folder can be browsed directly. */
+export function renderFileName(projectName: string, jobId: string): string {
+  const slug = slugify(projectName).slice(0, 64 - jobId.length - 1).replace(/-$/, "");
+  return `${slug}-${jobId}.mp4`;
+}
+
 export function renderPath(fileName: string): string {
   if (!isSafeFileName(fileName)) throw new PathError("Invalid file name");
   return safeJoin(rendersDir(), fileName);
