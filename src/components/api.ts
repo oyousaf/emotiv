@@ -1,6 +1,6 @@
 "use client";
 
-import type { FormatId, ProjectDoc, Scene } from "@/lib/schema";
+import type { Captions, FormatId, ProjectDoc, Scene } from "@/lib/schema";
 import type { AssetRecord, CustomTemplate, ProjectRecord, RenderJob, RenderQuality } from "@/lib/types";
 
 async function request<T>(url: string, init?: RequestInit): Promise<T> {
@@ -25,6 +25,8 @@ export const api = {
   saveProject: (id: string, patch: { name?: string; doc?: ProjectDoc }) =>
     request<ProjectRecord>(`/api/projects/${id}`, jsonInit("PUT", patch)),
   deleteProject: (id: string) => request<{ ok: true }>(`/api/projects/${id}`, { method: "DELETE" }),
+  getCaptions: (id: string) => request<Captions>(`/api/projects/${id}/captions`),
+  saveCaptions: (id: string, patch: Partial<Captions>) => request<Captions>(`/api/projects/${id}/captions`, jsonInit("PUT", patch)),
 
   uploadAssets: (projectId: string, files: File[]) => {
     const form = new FormData();

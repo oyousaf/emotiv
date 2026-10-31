@@ -238,6 +238,17 @@ export const projectDoc = z.object({
 });
 export type ProjectDoc = z.infer<typeof projectDoc>;
 
+/** Ready-to-paste post text for each platform, kept with the project. */
+const postText = z.string().max(5000).default("");
+export const captions = z.object({
+  youtubeTitle: z.string().max(200).default(""),
+  youtubeDescription: postText,
+  tiktok: postText,
+  snapchat: postText,
+});
+export type Captions = z.infer<typeof captions>;
+export const CAPTION_LIMITS: Partial<Record<keyof Captions, number>> = { youtubeTitle: 100, snapchat: 160 };
+
 export const ASSET_KINDS = ["video", "image", "audio", "font", "lottie"] as const;
 export type AssetKind = (typeof ASSET_KINDS)[number];
 

@@ -1,5 +1,5 @@
 import fs from "node:fs";
-import { projectDoc, scene as sceneSchema, type FormatId, type ProjectDoc, type Scene } from "../schema";
+import { captions as captionsSchema, projectDoc, scene as sceneSchema, type Captions, type FormatId, type ProjectDoc, type Scene } from "../schema";
 import { newId } from "../templates";
 import { getTotalDuration } from "../timeline";
 import type {
@@ -81,6 +81,27 @@ export function deleteProject(id: string): boolean {
 function cleanName(name: string): string {
   const n = name.replace(/[\u0000-\u001f]/g, "").trim().slice(0, 100);
   return n || "Untitled project";
+}
+
+// ---------------------------------------------------------------- captions
+
+export function getCaptions(projectId: string): Captions {
+  assertSafeId(projectId);
+  const row = getDb().prepare("SELECT data FROM captions WHERE project_id = ?").get(projectId) as Row | undefined;
+  return captionsSchema.parse(row ? JSON.parse(row.data as string) : {});
+}
+
+/** Merges the given fields into the project's captions. Null if there's no such project. */
+export function updateCaptions(projectId: string, patch: Partial<Captions>): Captions | null {
+  if (!getProject(projectId)) return null;
+  const next = captionsSchema.parse({ ...getCaptions(projectId), ...patch });
+  getDb()
+    .prepare(
+      `INSERT INTO captions (project_id, data, updated_at) VALUES (?, ?, ?)
+       ON CONFLICT(project_id) DO UPDATE SET data = excluded.data, updated_at = excluded.updated_at`,
+    )
+    .run(projectId, JSON.stringify(next), now());
+  return next;
 }
 
 // ------------------------------------------------------------------ assets

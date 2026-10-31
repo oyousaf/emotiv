@@ -55,6 +55,13 @@ const MIGRATIONS: string[] = [
     created_at INTEGER NOT NULL
   );
   `,
+  `
+  CREATE TABLE captions (
+    project_id TEXT PRIMARY KEY REFERENCES projects(id) ON DELETE CASCADE,
+    data TEXT NOT NULL,
+    updated_at INTEGER NOT NULL
+  );
+  `,
 ];
 
 function migrate(db: DatabaseSync) {
@@ -84,12 +91,18 @@ export function openDb(file = dbPath()): DatabaseSync {
 // Survive Next.js dev hot reloads without leaking connections.
 const g = globalThis as unknown as { __studioDb?: { file: string; db: DatabaseSync } };
 
+// A hot reload can bring new migrations while the cached connection lives on.
+let migratedThisLoad = false;
+
 export function getDb(): DatabaseSync {
   const file = dbPath();
   if (!g.__studioDb || g.__studioDb.file !== file) {
     g.__studioDb?.db.close();
     g.__studioDb = { file, db: openDb(file) };
+  } else if (!migratedThisLoad) {
+    migrate(g.__studioDb.db);
   }
+  migratedThisLoad = true;
   return g.__studioDb.db;
 }
 

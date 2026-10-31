@@ -3,7 +3,7 @@ import path from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import { TOOLS } from "../mcp/tools";
 import { translate } from "@/lib/server/claude";
-import { getProject, listAssets } from "@/lib/server/repo";
+import { getCaptions, getProject, listAssets } from "@/lib/server/repo";
 import { EXAMPLE_DIR, useTempDataDir } from "./helpers";
 
 const tmp = useTempDataDir();
@@ -36,6 +36,19 @@ describe("MCP tools", () => {
     expect(r.isError).toBeFalsy();
     const el = getProject(id)!.doc.scenes[0].elements.find((e) => e.name === "Number")!;
     expect(el).toMatchObject({ color: "#ffd700", animIn: { preset: "blur", duration: 20 }, counter: { to: 50000, suffix: "K", from: 0 } });
+  });
+
+  it("saves captions field by field", async () => {
+    await call("set_captions", { projectId: id, youtubeTitle: "Signs | Surah Al-Jathiyah 45:1-5 #Shorts", tiktok: "#quran" });
+    const r = await call("set_captions", { projectId: id, tiktok: "#quran #islam" });
+    expect(r.isError).toBeFalsy();
+    expect(getCaptions(id)).toEqual({
+      youtubeTitle: "Signs | Surah Al-Jathiyah 45:1-5 #Shorts",
+      youtubeDescription: "",
+      tiktok: "#quran #islam",
+      snapchat: "",
+    });
+    expect((await call("set_captions", { projectId: "prj_missing0000", tiktok: "x" })).isError).toBe(true);
   });
 
   it("rejects invalid edits with a reason and leaves the project alone", async () => {

@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { FORMATS } from "@/lib/schema";
 import type { RenderJob } from "@/lib/types";
 import { api } from "./api";
+import { CaptionsPanel } from "./CaptionsPanel";
 
 const STATUS_STYLE: Record<RenderJob["status"], string> = {
   queued: "text-ink-300",
@@ -60,6 +61,7 @@ export function RenderList({ projectId, refreshKey = 0, compact = false }: { pro
   const [jobs, setJobs] = useState<RenderJob[] | null>(null);
   const [worker, setWorker] = useState<{ online: boolean } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [openCaptions, setOpenCaptions] = useState<string | null>(null);
   // Jobs on their way out: hidden so they animate away, then removed on the server.
   const [leaving, setLeaving] = useState<Map<string, Leaving>>(new Map());
   const leavingRef = useRef(leaving); // read by exit animations after the job has left the tree
@@ -187,6 +189,13 @@ export function RenderList({ projectId, refreshKey = 0, compact = false }: { pro
                   <a className="btn py-1! text-xs" href={`/api/renders/${job.id}/download?inline`} target="_blank" rel="noreferrer">
                     Watch
                   </a>
+                  <button
+                    className={`btn py-1! text-xs ${openCaptions === job.id ? "border-accent!" : ""}`}
+                    aria-expanded={openCaptions === job.id}
+                    onClick={() => setOpenCaptions((id) => (id === job.id ? null : job.id))}
+                  >
+                    📋 Captions
+                  </button>
                 </>
               ) : null}
               {job.status === "queued" || job.status === "rendering" ? (
@@ -219,6 +228,7 @@ export function RenderList({ projectId, refreshKey = 0, compact = false }: { pro
                 </>
               )}
             </div>
+            {openCaptions === job.id ? <CaptionsPanel projectId={job.projectId} /> : null}
           </motion.li>
           ))}
         </AnimatePresence>

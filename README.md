@@ -40,6 +40,7 @@ npm run export:example -- vertical high  # 1080x1920, higher quality
 - **Inspector** (right): scene background (colour, gradient, image or video), transitions, layers, soundtrack, and per-layer text, colour, layout, timing and in/out/loop animation settings.
 - **Assets**: drag and drop MP4, PNG/JPG/WebP/GIF, MP3/WAV/M4A/OGG and TTF/OTF/WOFF/WOFF2 files. Uploaded fonts appear in the font picker.
 - **Export**: queue landscape and/or vertical renders at draft, standard or high quality. Progress updates live, and finished files download as MP4. They're also saved in `data/renders/` under readable names (e.g. `al-jathiyah-1-5-english-rnd_….mp4`), so you can post straight from that folder. 🧹 (and 🧹 Clear all) only clears jobs from the list; the red trash icon (and Delete all), after a confirmation, are the only actions that delete MP4s, and deleting a project keeps its finished videos.
+- **Captions**: each finished export has a 📋 Captions panel with the project's YouTube title and description, TikTok caption and Snapchat caption, each with a copy button and a character count where the platform has a limit. Edit them in place, or ask the AI tab (or Claude Code, via the `set_captions` MCP tool) to write them.
 - **Templates**: "Save scene as template" stores a scene in SQLite, and it then shows up in Add scene and New project.
 - Edits autosave, and Ctrl+Z / Ctrl+Shift+Z undo and redo.
 

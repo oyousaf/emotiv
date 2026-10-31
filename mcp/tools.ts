@@ -14,6 +14,7 @@ import {
   listCustomTemplates,
   listProjects,
   listRenders,
+  updateCaptions,
   updateProject,
 } from "../src/lib/server/repo";
 import { storeUpload } from "../src/lib/server/uploads";
@@ -297,6 +298,22 @@ export const TOOLS = [
         return j ? ok("Render:", j) : fail("No such render.");
       }
       return ok("Renders:", listRenders(projectId, 5));
+    },
+  }),
+  tool({
+    name: "set_captions",
+    description:
+      "Save the post text shown with copy buttons next to the project's exports. Give any of: youtubeTitle (<=100 chars), youtubeDescription, tiktok, snapchat (<=160 chars). Omitted fields keep their value; returns the saved captions.",
+    input: {
+      projectId: z.string(),
+      youtubeTitle: z.string().max(200).optional(),
+      youtubeDescription: z.string().max(5000).optional(),
+      tiktok: z.string().max(5000).optional(),
+      snapchat: z.string().max(5000).optional(),
+    },
+    handler: ({ projectId, ...patch }) => {
+      const saved = updateCaptions(projectId, patch);
+      return saved ? ok("Saved captions:", saved) : fail(`No project with id ${projectId}.`);
     },
   }),
 ];
