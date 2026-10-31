@@ -39,5 +39,6 @@ describe("render file names", () => {
     expect(isSafeFileName(name)).toBe(true);
     expect(isSafeFileName(renderFileName("x".repeat(100), "rnd_baa99b8caa"))).toBe(true);
     expect(renderFileName("🎬", "rnd_baa99b8caa")).toBe("render-rnd_baa99b8caa.mp4");
+    expect(renderFileName("thurs eve · Français", "rnd_d39352f5e0")).toBe("thurs-eve-francais-rnd_d39352f5e0.mp4");
   });
 });

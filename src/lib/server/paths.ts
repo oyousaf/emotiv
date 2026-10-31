@@ -54,9 +54,10 @@ export function rendersDir(): string {
   return path.join(getDataDir(), "renders");
 }
 
-/** "Al-Jathiyah 1–5 · English" → "al-jathiyah-1-5-english". */
+/** "Al-Jathiyah 1–5 · Español" → "al-jathiyah-1-5-espanol". */
 export function slugify(name: string, fallback = "render"): string {
-  return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || fallback;
+  const plain = name.normalize("NFD").replace(/[̀-ͯ]/g, "");
+  return plain.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || fallback;
 }
 
 /** A readable, unique MP4 name, so the renders folder can be browsed directly. */
