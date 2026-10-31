@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { FORMATS } from "@/lib/schema";
 import type { RenderJob } from "@/lib/types";
 import { api } from "./api";
@@ -28,6 +29,24 @@ function TrashIcon() {
   );
 }
 
+const STAGGER_S = 0.07;
+const EXIT_S = 0.35;
+type Leaving = { index: number; mode: "clear" | "delete" };
+
+/** Cleared jobs sweep off to the left; deleted ones flash red and drop away to the right. */
+function leaveVariant(info: Leaving | undefined) {
+  const transition = { duration: EXIT_S, delay: (info?.index ?? 0) * STAGGER_S, ease: [0.4, 0, 1, 1] as const };
+  return info?.mode === "delete"
+    ? { opacity: 0, x: 48, scale: 0.92, borderColor: "#ff4d6d", filter: "blur(2px)", transition }
+    : { opacity: 0, x: -64, filter: "blur(3px)", transition };
+}
+
+function clearWarning(count: number) {
+  return `This will clear ${count} finished job${count === 1 ? "" : "s"} from the render queue. The MP4s stay in data/renders.
+
+Clear?`;
+}
+
 function deleteWarning(jobs: RenderJob[]) {
   const what = jobs.length === 1 ? jobs[0].outputFile : `${jobs.length} videos`;
   return `This will permanently delete ${what} from your device (data/renders). It can't be undone.\n\nDelete?`;
@@ -41,6 +60,10 @@ export function RenderList({ projectId, refreshKey = 0, compact = false }: { pro
   const [jobs, setJobs] = useState<RenderJob[] | null>(null);
   const [worker, setWorker] = useState<{ online: boolean } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Jobs on their way out: hidden so they animate away, then removed on the server.
+  const [leaving, setLeaving] = useState<Map<string, Leaving>>(new Map());
+  const leavingRef = useRef(leaving); // read by exit animations after the job has left the tree
+  const reduceMotion = useReducedMotion();
 
   const refresh = useCallback(async () => {
     try {
@@ -73,7 +96,17 @@ export function RenderList({ projectId, refreshKey = 0, compact = false }: { pro
     } catch (e) {
       setError((e as Error).message);
     }
-    refresh();
+    await refresh();
+  };
+
+  /** Animates the jobs out one after another, then clears (or deletes) them. */
+  const remove = async (targets: RenderJob[], mode: Leaving["mode"]) => {
+    const next = new Map(targets.map((j, index) => [j.id, { index, mode }] as const));
+    leavingRef.current = next;
+    setLeaving(next);
+    if (!reduceMotion) await new Promise((r) => setTimeout(r, (STAGGER_S * targets.length + EXIT_S) * 1000));
+    await act(() => Promise.all(targets.map((j) => api.deleteRender(j.id, mode === "delete"))));
+    setLeaving(new Map());
   };
 
   return (
@@ -91,7 +124,9 @@ export function RenderList({ projectId, refreshKey = 0, compact = false }: { pro
           <button
             className="btn btn-ghost py-1! text-xs text-ink-300"
             title="Clear finished jobs from this list. The MP4s stay in data/renders."
-            onClick={() => act(() => Promise.all(finished.map((j) => api.deleteRender(j.id))))}
+            onClick={() => {
+              if (confirm(clearWarning(finished.length))) remove(finished, "clear");
+            }}
           >
             🧹 Clear all
           </button>
@@ -99,7 +134,7 @@ export function RenderList({ projectId, refreshKey = 0, compact = false }: { pro
             <button
               className="btn btn-ghost gap-1.5 py-1! text-xs text-bad"
               onClick={() => {
-                if (confirm(deleteWarning(withFiles))) act(() => Promise.all(withFiles.map((j) => api.deleteRender(j.id, true))));
+                if (confirm(deleteWarning(withFiles))) remove(withFiles, "delete");
               }}
             >
               <TrashIcon /> Delete all
@@ -108,8 +143,16 @@ export function RenderList({ projectId, refreshKey = 0, compact = false }: { pro
         </div>
       ) : null}
       <ul className="space-y-2">
-        {jobs?.map((job) => (
-          <li key={job.id} className="rounded-lg border border-ink-700 bg-ink-850 p-3">
+        <AnimatePresence initial={false}>
+          {jobs?.filter((job) => !leaving.has(job.id)).map((job) => (
+          <motion.li
+            key={job.id}
+            layout={!reduceMotion}
+            custom={job.id}
+            exit={reduceMotion ? { opacity: 0 } : "leave"}
+            variants={{ leave: (id: string) => leaveVariant(leavingRef.current.get(id)) }}
+            className="rounded-lg border border-ink-700 bg-ink-850 p-3"
+          >
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0">
                 {!compact ? <div className="truncate text-sm font-medium">{job.projectName}</div> : null}
@@ -156,7 +199,7 @@ export function RenderList({ projectId, refreshKey = 0, compact = false }: { pro
                     className="btn btn-ghost py-1! text-sm"
                     title={job.outputFile ? `Clear from this list. ${job.outputFile} stays in data/renders.` : "Clear from this list."}
                     aria-label="Clear from list"
-                    onClick={() => act(() => api.deleteRender(job.id))}
+                    onClick={() => remove([job], "clear")}
                   >
                     🧹
                   </button>
@@ -167,7 +210,7 @@ export function RenderList({ projectId, refreshKey = 0, compact = false }: { pro
                       title={`Permanently delete ${job.outputFile}`}
                       aria-label="Delete file"
                       onClick={() => {
-                        if (confirm(deleteWarning([job]))) act(() => api.deleteRender(job.id, true));
+                        if (confirm(deleteWarning([job]))) remove([job], "delete");
                       }}
                     >
                       <TrashIcon />
@@ -176,8 +219,9 @@ export function RenderList({ projectId, refreshKey = 0, compact = false }: { pro
                 </>
               )}
             </div>
-          </li>
-        ))}
+          </motion.li>
+          ))}
+        </AnimatePresence>
       </ul>
     </div>
   );
