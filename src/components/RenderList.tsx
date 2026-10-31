@@ -121,8 +121,8 @@ export function RenderList({ projectId, refreshKey = 0, compact = false }: { pro
                   >
                     Remove
                   </button>
+                  {/* Pushed to the far right, away from Download, so it isn't clicked by accident. */}
                   {job.outputFile ? (
-                    {/* Pushed to the far right, away from Download, so it isn't clicked by accident. */}
                     <button
                       className="btn btn-ghost ml-auto py-1! text-xs text-bad/80"
                       onClick={() => {
