@@ -19,6 +19,11 @@ function elapsed(job: RenderJob) {
   return s < 60 ? `${s.toFixed(0)}s` : `${Math.floor(s / 60)}m ${Math.round(s % 60)}s`;
 }
 
+function deleteWarning(jobs: RenderJob[]) {
+  const what = jobs.length === 1 ? jobs[0].outputFile : `${jobs.length} videos`;
+  return `This will permanently delete ${what} from your device (data/renders). It can't be undone.\n\nDelete?`;
+}
+
 /**
  * Live view of the render queue. Polls quickly while anything is queued or
  * rendering, slowly otherwise. `refreshKey` forces an immediate refresh.
@@ -40,6 +45,9 @@ export function RenderList({ projectId, refreshKey = 0, compact = false }: { pro
   }, [projectId]);
 
   const active = jobs?.some((j) => j.status === "queued" || j.status === "rendering") ?? false;
+  // Bulk actions only touch jobs that have stopped; running renders are left alone.
+  const finished = jobs?.filter((j) => j.status !== "queued" && j.status !== "rendering") ?? [];
+  const withFiles = finished.filter((j) => j.outputFile);
 
   useEffect(() => {
     refresh();
@@ -69,6 +77,27 @@ export function RenderList({ projectId, refreshKey = 0, compact = false }: { pro
       ) : null}
       {error ? <div className="text-xs text-bad">{error}</div> : null}
       {jobs && jobs.length === 0 ? <p className="text-sm text-ink-500">No renders yet.</p> : null}
+      {finished.length > 1 ? (
+        <div className="flex justify-between gap-2">
+          <button
+            className="btn btn-ghost py-1! text-xs text-ink-300"
+            title="Clear finished jobs from this list. The MP4s stay in data/renders."
+            onClick={() => act(() => Promise.all(finished.map((j) => api.deleteRender(j.id))))}
+          >
+            🧹 Clear all
+          </button>
+          {withFiles.length ? (
+            <button
+              className="btn btn-ghost py-1! text-xs text-bad/80"
+              onClick={() => {
+                if (confirm(deleteWarning(withFiles))) act(() => Promise.all(withFiles.map((j) => api.deleteRender(j.id, true))));
+              }}
+            >
+              🗑️ Delete all
+            </button>
+          ) : null}
+        </div>
+      ) : null}
       <ul className="space-y-2">
         {jobs?.map((job) => (
           <li key={job.id} className="rounded-lg border border-ink-700 bg-ink-850 p-3">
@@ -115,23 +144,24 @@ export function RenderList({ projectId, refreshKey = 0, compact = false }: { pro
               ) : (
                 <>
                   <button
-                    className="btn btn-ghost py-1! text-xs text-ink-400"
-                    title={job.outputFile ? `Hide from this list. ${job.outputFile} stays in data/renders.` : "Hide from this list."}
+                    className="btn btn-ghost py-1! text-sm"
+                    title={job.outputFile ? `Clear from this list. ${job.outputFile} stays in data/renders.` : "Clear from this list."}
+                    aria-label="Clear from list"
                     onClick={() => act(() => api.deleteRender(job.id))}
                   >
-                    Remove
+                    🧹
                   </button>
                   {/* Pushed to the far right, away from Download, so it isn't clicked by accident. */}
                   {job.outputFile ? (
                     <button
-                      className="btn btn-ghost ml-auto py-1! text-xs text-bad/80"
+                      className="btn btn-ghost ml-auto py-1! text-sm"
+                      title={`Permanently delete ${job.outputFile}`}
+                      aria-label="Delete file"
                       onClick={() => {
-                        if (confirm(`Delete ${job.outputFile} from data/renders? This can't be undone.`)) {
-                          act(() => api.deleteRender(job.id, true));
-                        }
+                        if (confirm(deleteWarning([job]))) act(() => api.deleteRender(job.id, true));
                       }}
                     >
-                      Delete file
+                      🗑️
                     </button>
                   ) : null}
                 </>

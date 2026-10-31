@@ -39,7 +39,7 @@ npm run export:example -- vertical high  # 1080x1920, higher quality
 - **Timeline**: scene blocks and the selected scene's layers. Drag a layer to move it, drag its right edge to change its length, drag a scene's right edge to change the scene's length.
 - **Inspector** (right): scene background (colour, gradient, image or video), transitions, layers, soundtrack, and per-layer text, colour, layout, timing and in/out/loop animation settings.
 - **Assets**: drag and drop MP4, PNG/JPG/WebP/GIF, MP3/WAV/M4A/OGG and TTF/OTF/WOFF/WOFF2 files. Uploaded fonts appear in the font picker.
-- **Export**: queue landscape and/or vertical renders at draft, standard or high quality. Progress updates live, and finished files download as MP4. They're also saved in `data/renders/` under readable names (e.g. `al-jathiyah-1-5-english-rnd_….mp4`), so you can post straight from that folder. **Remove** only clears a job from the list; **Delete file** (with a confirmation) is the only action that deletes an MP4, and deleting a project keeps its finished videos.
+- **Export**: queue landscape and/or vertical renders at draft, standard or high quality. Progress updates live, and finished files download as MP4. They're also saved in `data/renders/` under readable names (e.g. `al-jathiyah-1-5-english-rnd_….mp4`), so you can post straight from that folder. 🧹 (and 🧹 Clear all) only clears jobs from the list; 🗑️ (and 🗑️ Delete all), after a confirmation, are the only actions that delete MP4s, and deleting a project keeps its finished videos.
 - **Templates**: "Save scene as template" stores a scene in SQLite, and it then shows up in Add scene and New project.
 - Edits autosave, and Ctrl+Z / Ctrl+Shift+Z undo and redo.
 
