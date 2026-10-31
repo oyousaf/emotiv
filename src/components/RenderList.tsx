@@ -19,6 +19,15 @@ function elapsed(job: RenderJob) {
   return s < 60 ? `${s.toFixed(0)}s` : `${Math.floor(s / 60)}m ${Math.round(s % 60)}s`;
 }
 
+/** Drawn in currentColor so it can be red; the 🗑️ emoji can't be recoloured. */
+function TrashIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6" />
+    </svg>
+  );
+}
+
 function deleteWarning(jobs: RenderJob[]) {
   const what = jobs.length === 1 ? jobs[0].outputFile : `${jobs.length} videos`;
   return `This will permanently delete ${what} from your device (data/renders). It can't be undone.\n\nDelete?`;
@@ -88,12 +97,12 @@ export function RenderList({ projectId, refreshKey = 0, compact = false }: { pro
           </button>
           {withFiles.length ? (
             <button
-              className="btn btn-ghost py-1! text-xs text-bad/80"
+              className="btn btn-ghost gap-1.5 py-1! text-xs text-bad"
               onClick={() => {
                 if (confirm(deleteWarning(withFiles))) act(() => Promise.all(withFiles.map((j) => api.deleteRender(j.id, true))));
               }}
             >
-              🗑️ Delete all
+              <TrashIcon /> Delete all
             </button>
           ) : null}
         </div>
@@ -154,14 +163,14 @@ export function RenderList({ projectId, refreshKey = 0, compact = false }: { pro
                   {/* Pushed to the far right, away from Download, so it isn't clicked by accident. */}
                   {job.outputFile ? (
                     <button
-                      className="btn btn-ghost ml-auto py-1! text-sm"
+                      className="btn btn-ghost ml-auto py-1! text-sm text-bad"
                       title={`Permanently delete ${job.outputFile}`}
                       aria-label="Delete file"
                       onClick={() => {
                         if (confirm(deleteWarning([job]))) act(() => api.deleteRender(job.id, true));
                       }}
                     >
-                      🗑️
+                      <TrashIcon />
                     </button>
                   ) : null}
                 </>
