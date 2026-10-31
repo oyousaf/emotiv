@@ -152,7 +152,9 @@ const TextView: React.FC<{ el: TextElement; duration: number }> = ({ el, duratio
   return (
     <div style={boxStyle(el)}>
       <div style={{ ...stateStyle(whole), textAlign: el.align }}>
+        {/* dir="auto" lays Arabic/Hebrew out right to left, including split words and trailing marks. */}
         <div
+          dir="auto"
           style={{
             ...textStyle,
             backgroundColor: el.boxColor ?? undefined,
